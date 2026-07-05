@@ -13,23 +13,20 @@ avian = ["dep:avian3d"]
 rapier = ["dep:bevy_rapier3d"]
 
 [dependencies]
-bevy = "0.14"
+bevy = "0.19"
 bevy_fundsp = { version = "0.4.0", optional = true }
-bevy_panorbit_camera = "0.19.0"
+bevy_panorbit_camera = "0.35.0"
 # bevy_toon_shader = "0.3.0"
-# avian3d = { git = "https://github.com/Jondolf/avian", version = "0.1.2" }
-avian3d = { version = "0.1.2", optional = true }
-parry3d = "0.15"
+avian3d = { version = "0.7", optional = true }
 petgraph = { version = "0.6.5", features = ["serde-1"] }
-rand = "0.8.5"
-avian_pickup = { git = "https://github.com/janhohenheim/avian_pickup", version = "0.1.0", optional = true }
-rand_distr = "0.4.3"
-weighted_rand = "0.4.2"
+rand = "0.10"
+avian_pickup = { version = "0.5", optional = true }
+rand_distr = "0.6"
 eviolite = "0.1.1"
 clap = { version = "4.5.20", features = ["derive"] }
 serde = { version = "1.0.213", features = ["derive"] }
 serde_json = "1.0.132"
-bevy_rapier3d = { version = "0.27.0", optional = true, features = [ "simd-stable", "debug-render-3d" ]}
+bevy_rapier3d = { version = "0.34", optional = true, features = [ "simd-stable", "debug-render-3d" ]}
 genetic_ops = { version = "0.1.0", path = "../genetic_ops", features = [ "petgraph" ] }
 # avian_interpolation3d = { git = "https://github.com/janhohenheim/avian_interpolation", version = "0.1.0" }
 
@@ -40,5 +37,5 @@ doc = false
 
 [patch.crates-io]
 petgraph = { path = '../petgraph' }
-avian3d = { path = '../avian/crates/avian3d' }
+weighted_rand = { git = 'https://github.com/bionicles/weighted_rand.git' }
 # parry3d = { path = '../parry/crates/parry3d' }

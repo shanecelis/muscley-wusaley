@@ -125,13 +125,15 @@ pub fn sync_muscles(
         if let Some(mut sensor) = sensor {
             if let Some(range) = range {
                 let delta = range.max - range.min;
-                sensor.value = (joint.rest_length - range.min) / delta;
+                let rest_length = joint.limits.min;
+                sensor.value = (rest_length - range.min) / delta;
             } else {
-                sensor.value = joint.rest_length;
+                sensor.value = joint.limits.min;
             }
         }
 
-        joint.rest_length = muscle.apply(range);
+        let rest_length = muscle.apply(range);
+        joint.limits = DistanceLimit::new(rest_length, rest_length);
     }
 }
 
@@ -140,7 +142,7 @@ pub fn oscillate_muscles(
     nervous_systems: Query<(&NervousSystem, &SpringOscillator)>,
     mut muscles: Query<&mut Muscle>,
 ) {
-    let seconds = time.elapsed_seconds();
+    let seconds = time.elapsed_secs();
     for (nervous_system, oscillator) in &nervous_systems {
         let v = oscillator.eval(seconds);
         for muscle_id in &nervous_system.muscles {
@@ -157,7 +159,7 @@ pub fn oscillate_brain(
     nervous_systems: Query<(&NervousSystem, &OscillatorBrain)>,
     mut muscles: Query<&mut Muscle>,
 ) {
-    let seconds = time.elapsed_seconds();
+    let seconds = time.elapsed_secs();
     for (nervous_system, brain) in &nervous_systems {
         let n = brain.oscillators.len();
         for (i, muscle_id) in nervous_system.muscles.iter().enumerate() {
@@ -196,13 +198,13 @@ pub fn keyboard_brain(
         for i in 0..muscles.len().min(keys.len()) {
             if let Ok(mut muscle) = joints.get_mut(muscles[i]) {
                 if input.pressed(keys[i][0]) {
-                    muscle.value += delta * time.delta_seconds();
+                    muscle.value += delta * time.delta_secs();
                     eprintln!("inc muscle value {}", muscle.value);
                 } else if input.pressed(keys[i][1]) {
                     muscle.value = 0.5;
                     eprintln!("reset muscle value {}", muscle.value);
                 } else if input.pressed(keys[i][2]) {
-                    muscle.value -= delta * time.delta_seconds();
+                    muscle.value -= delta * time.delta_secs();
                     eprintln!("dec muscle value {}", muscle.value);
                 } else if input.just_pressed(keys[i][3]) {
                     if disabled.get(muscles[i]).is_ok() {
@@ -240,13 +242,13 @@ pub fn keyboard_brain(
         for i in 0..muscles.len().min(keys.len()) {
             if let Ok(mut muscle) = joints.get_mut(muscles[i]) {
                 if input.pressed(keys[i][0]) {
-                    muscle.value += delta * time.delta_seconds();
+                    muscle.value += delta * time.delta_secs();
                     eprintln!("inc muscle value {}", muscle.value);
                 } else if input.pressed(keys[i][1]) {
                     muscle.value = 0.5;
                     eprintln!("reset muscle value {}", muscle.value);
                 } else if input.pressed(keys[i][2]) {
-                    muscle.value -= delta * time.delta_seconds();
+                    muscle.value -= delta * time.delta_secs();
                     eprintln!("dec muscle value {}", muscle.value);
                 } else if input.just_pressed(keys[i][3]) {
                     warn!("No joint disabling yet for rapier");

@@ -11,11 +11,11 @@ use bevy::prelude::*;
 #[cfg(feature = "rapier")]
 use bevy_rapier3d::prelude::*;
 use core::f32::consts::{FRAC_PI_4, TAU};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use petgraph::{graph::DefaultIx, prelude::*};
 
-use rand_distr::{Distribution, Standard};
+use rand_distr::{Distribution, StandardUniform};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
@@ -33,7 +33,7 @@ impl MuscleGene {
         Self {
             parent: Quat::from_rng(rng),
             child: Quat::from_rng(rng),
-            max_strength: rng.gen_range(0.1..2.0),
+            max_strength: rng.random_range(0.1..2.0),
         }
     }
 }
@@ -55,7 +55,7 @@ impl EdgeOp {
         } else {
             EdgeOp::Radial {
                 normal: Dir3::from_rng(rng),
-                symmetry: rng.gen_range(1..=8),
+                symmetry: rng.random_range(1..=8),
             }
         }
     }
@@ -85,7 +85,7 @@ pub struct PartEdge {
 impl PartEdge {
     fn gen<R: Rng>(rng: &mut R) -> PartEdge {
         let s = to_vec3(uniform_generator(0.1, 1.2));
-        let m = rng.gen_range(0..3);
+        let m = rng.random_range(0..3);
         Self {
             joint_rotation: Quat::from_rng(rng),
             rotation: Quat::from_rng(rng),
@@ -184,7 +184,7 @@ impl Part {
 pub fn into_generator<T, R>() -> impl Generator<R, Item = T>
 where
     T: FromRng,
-    Standard: Distribution<T>,
+    StandardUniform: Distribution<T>,
     R: Rng,
 {
     move |rng: &mut R| T::from_rng(rng)

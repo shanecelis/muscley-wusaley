@@ -15,7 +15,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use genetic_ops::prelude::*;
 use creatura::{body::*, brain::*, graph::*, math::*, *};
 use petgraph::prelude::*;
-use rand::{rngs::StdRng, thread_rng, SeedableRng};
+use rand::{rng, rngs::StdRng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use std::{
     ffi::OsString,
@@ -104,7 +104,7 @@ fn main() {
 
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            resolution: WindowResolution::new(400.0, 400.0),
+            resolution: WindowResolution::new(400, 400),
             ..default()
         }),
         ..default()
@@ -178,7 +178,7 @@ struct Seed(u64);
 fn rng_from_seed(seed: Option<Res<Seed>>) -> StdRng {
     match seed {
         Some(seed) => StdRng::seed_from_u64(seed.0),
-        None => StdRng::from_entropy(),
+        None => StdRng::from_rng(&mut rng()),
     }
 }
 
@@ -268,9 +268,9 @@ fn delete_on_backspace(
     input: Res<ButtonInput<KeyCode>>,
 ) {
     if input.just_pressed(KeyCode::Backspace) {
-        if let Ok(creature) = query.get_single() {
+        if let Ok(creature) = query.single() {
             for id in &creature.0 {
-                commands.entity(*id).despawn_recursive();
+                commands.entity(*id).despawn();
             }
         }
     }
@@ -281,8 +281,10 @@ fn mutate_on_space(
     input: Res<ButtonInput<KeyCode>>,
 ) {
     if input.just_pressed(KeyCode::Space) {
-        let mut rng = rand::thread_rng();
-        let (mut brain, mut genotype) = query.single_mut();
+        let mut rng = rng();
+        let Ok((mut brain, mut genotype)) = query.single_mut() else {
+            return;
+        };
         let mut g = genotype.0.clone();
         let count = brain_mutator(&mut g, &mut rng);
 
@@ -298,8 +300,10 @@ fn mutate_on_space(
     }
 
     if input.just_pressed(KeyCode::Enter) {
-        let mut rng = rand::thread_rng();
-        let (mut brain, mut genotype) = query.single_mut();
+        let mut rng = rng();
+        let Ok((mut brain, mut genotype)) = query.single_mut() else {
+            return;
+        };
         let g = brain_generator.gen(&mut rng);
 
         let h: DiGraph<Neuron, ()> = g.map(|_ni, n| (*n).into(), |_, _| ());
@@ -341,29 +345,25 @@ fn setup_env(
 ) {
     let ground_color = Color::srgb_u8(226, 199, 184);
     // Ground
-    setup_plane(commands.spawn((PbrBundle {
-        mesh: meshes.add(Cuboid::new(10., 0.1, 10.)),
-        material: materials.add(ground_color),
-        ..default()
-    },)));
+    setup_plane(commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(10., 0.1, 10.))),
+        MeshMaterial3d(materials.add(ground_color)),
+    )));
 
     // Light
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
+    commands.spawn((
+        DirectionalLight {
             illuminance: 1000.0,
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(1.0, 8.0, 1.0).looking_at(Vec3::ZERO, Dir3::Y),
-        ..default()
-    });
+        Transform::from_xyz(1.0, 8.0, 1.0).looking_at(Vec3::ZERO, Dir3::Y),
+    ));
 
     // Camera
     let thing = commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         PanOrbitCamera::default(),
     ));
 
@@ -411,9 +411,9 @@ fn build_muscle(parent: &MuscleSite, child: &MuscleSite, commands: &mut Commands
     commands
         .spawn(
             DistanceJoint::new(parent.id, child.id)
-                .with_local_anchor_1(parent.anchor_local)
-                .with_local_anchor_2(child.anchor_local)
-                .with_rest_length(dbg!(rest_length))
+                .with_local_anchor1(parent.anchor_local)
+                .with_local_anchor2(child.anchor_local)
+                .with_limits(dbg!(rest_length), dbg!(rest_length))
                 // .with_limits(rest_length, rest_length)
                 // .with_linear_velocity_damping(0.1)
                 // .with_angular_velocity_damping(1.0)

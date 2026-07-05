@@ -168,15 +168,11 @@ pub fn spherical_joint(joint: &JointConfig, commands: &mut Commands) -> Entity {
     commands
         .spawn({
             let mut j = SphericalJoint::new(joint.parent, joint.child)
-                // .with_swing_axis(Vector::Y)
-                // .with_twist_axis(Vector::X)
-                .with_local_anchor_1(joint.parent_anchor)
-                .with_local_anchor_2(joint.child_anchor)
-                // .with_aligned_axis(Vector::Z)
-                .with_swing_limits(-FRAC_PI_4, FRAC_PI_4) // .with_linear_velocity_damping(0.1)
-                .with_twist_limits(-FRAC_PI_4, FRAC_PI_4); // .with_linear_velocity_damping(0.1)
-            j.swing_axis = joint.tangent; //Vector::Y;
-            j.twist_axis = joint.normal; //Vector::X;
+                .with_local_anchor1(joint.parent_anchor)
+                .with_local_anchor2(joint.child_anchor)
+                .with_swing_limits(-FRAC_PI_4, FRAC_PI_4)
+                .with_twist_limits(-FRAC_PI_4, FRAC_PI_4);
+            j.twist_axis = joint.normal;
             j
         })
         .id()
@@ -237,7 +233,7 @@ fn make_dynamic(mut commands: &mut EntityCommands, child: &Part, position: Vec3,
         // RigidBody::Static,
         RigidBody::Dynamic,
         Position(position),
-        MassPropertiesBundle::new_computed(&child.collider(), child.volume() * density),
+        MassPropertiesBundle::from_shape(&child.collider(), child.volume() * density),
         // c,
         child.collider(),
     ));
@@ -262,15 +258,13 @@ pub fn cube_body(
     materials: &mut Assets<StandardMaterial>,
     commands: &mut Commands,
 ) -> Entity {
-    let mut entity_commands = commands.spawn((PbrBundle {
-        mesh: meshes.add(Mesh::from(child.shape())),
-        material: materials.add(StandardMaterial {
+    let mut entity_commands = commands.spawn((
+        Mesh3d(meshes.add(Mesh::from(child.shape()))),
+        MeshMaterial3d(materials.add(StandardMaterial {
             base_color: color,
-            // emissive: Color::WHITE.into(),
             ..default()
-        }),
-        ..default()
-    },));
+        })),
+    ));
     make_dynamic(&mut entity_commands, child, position, density);
     entity_commands.id()
 }

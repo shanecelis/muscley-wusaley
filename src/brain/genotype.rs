@@ -4,7 +4,7 @@ use crate::{
 use genetic_ops::prelude::*;
 use bevy::prelude::*;
 use petgraph::{algo::toposort, prelude::*};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::VecDeque;
@@ -177,7 +177,7 @@ impl NVec4 {
         R: Rng,
     {
         let m = uniform_mutator(0.0, 0.1);
-        match rnd.gen_range(0..4) {
+        match rnd.random_range(0..4) {
             0 => m.mutate(&mut gene.0.x, rnd),
             1 => m.mutate(&mut gene.0.y, rnd),
             2 => m.mutate(&mut gene.0.z, rnd),
@@ -201,7 +201,7 @@ pub fn bitbrain_update(
     mut muscles_query: Query<&mut Muscle>,
 ) {
     let ctx = Context {
-        time: time.elapsed_seconds(),
+        time: time.elapsed_secs(),
     };
     for (nervous_system, mut brain) in &mut nervous_systems {
         let _sensors = &nervous_system.sensors;
@@ -455,7 +455,7 @@ where
     let edges = add_edge(|_r: &mut R| ());
     let rm_edge = FnMutator::from(remove_edge);
     let weighted = WeightedMutator::new(vec![&nodes, &edges, &rm_edge
-    ], &[1, 1, 1]);
+    ], &[1.0, 1.0, 1.0]);
     weighted.mutate(graph, rng)
     // nodes.mutate(graph, rng)
 }
